@@ -3,6 +3,10 @@ target/
 **/*.rs.bk
 *.pdb
 
+# Binaries
+healthcheck-bin
+healthcheckrs
+
 # Cargo lock files (workspace has Cargo.lock)
 **/Cargo.lock
 
