@@ -80,12 +80,25 @@ cargo flamegraph --bench tcp_check -o flamegraph-tcp.svg -- --bench
 
 ### Performance Profiles
 
-Flamegraphs visualize where time is spent during benchmark execution:
+#### TCP Check
+**Performance:** 19.52 µs median | 22.91 µs mean | Config parse: 96.5 ns
 
-- [TCP Check Flamegraph](health-core/flamegraph-tcp.svg)
-- [HTTP Check Flamegraph](health-core/flamegraph-http.svg)
-- [Process Check Flamegraph](health-core/flamegraph-process.svg)
-- [Database Check Flamegraph](health-core/flamegraph-database.svg)
+![TCP Check Flamegraph](health-core/flamegraph-tcp.svg)
+
+#### HTTP Check
+**Performance:** Config parse (HTTP): 61.73 ns | Config parse (HTTPS): 62.41 ns
+
+![HTTP Check Flamegraph](health-core/flamegraph-http.svg)
+
+#### Process Check
+**Performance:** Existing process: 83.14 µs median | Nonexistent: 1.535 ms median | Config parse: 41.07 ns
+
+![Process Check Flamegraph](health-core/flamegraph-process.svg)
+
+#### Database Check
+**Performance:** Config parse: 68.04 ns | Complex config: 68.66 ns
+
+![Database Check Flamegraph](health-core/flamegraph-database.svg)
 
 ## Usage
 

@@ -11,3 +11,19 @@ postgres = { version = "0.19.12", default-features = false }
 
 [dev-dependencies]
 divan = "0.1"
+
+[[bench]]
+name = "tcp_check"
+harness = false
+
+[[bench]]
+name = "http_check"
+harness = false
+
+[[bench]]
+name = "process_check"
+harness = false
+
+[[bench]]
+name = "database_check"
+harness = false
