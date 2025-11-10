@@ -81,6 +81,70 @@ cargo bench -p healthcheck-core --bench tcp_check
 # process:name=systemd
 ```
 
+## Docker Integration
+
+### Method 1: COPY binary into image
+
+```dockerfile
+FROM alpine:latest
+
+# Install dependencies (if needed)
+RUN apk add --no-cache ca-certificates
+
+# Copy healthcheck binary
+COPY --chmod=755 healthcheck /usr/local/bin/healthcheck
+
+# Create healthcheck config
+RUN echo "tcp:host=127.0.0.1,port=8080,timeout_ms=1000" > /etc/healthcheck.conf
+
+# Your application setup here
+COPY your-app /app/your-app
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD ["/usr/local/bin/healthcheck", "/etc/healthcheck.conf"]
+
+CMD ["/app/your-app"]
+```
+
+### Method 2: Volume mount in docker-compose
+
+```yaml
+version: '3.8'
+
+services:
+  app:
+    image: your-app:latest
+    volumes:
+      - ./healthcheck:/usr/local/bin/healthcheck:ro
+      - ./healthcheck.conf:/etc/healthcheck.conf:ro
+    healthcheck:
+      test: ["/usr/local/bin/healthcheck", "/etc/healthcheck.conf"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+```
+
+### Example configs for common scenarios
+
+**Web service:**
+```conf
+http:url=http://localhost:8080/health,timeout_ms=5000
+```
+
+**Database container:**
+```conf
+tcp:host=127.0.0.1,port=5432,timeout_ms=3000
+database:conn_str=postgresql://user:pass@localhost:5432/db,timeout_ms=3000
+```
+
+**Multi-check:**
+```conf
+tcp:host=127.0.0.1,port=8080,timeout_ms=1000
+http:url=http://localhost:8080/health,timeout_ms=5000
+process:name=my-app
+```
+
 ## Development
 
 ```bash
