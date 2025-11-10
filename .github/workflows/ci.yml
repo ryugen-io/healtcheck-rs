@@ -157,5 +157,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Rust 1.91
+        uses: dtolnay/rust-toolchain@1.91
+
       - name: Run cargo-deny
         uses: EmbarkStudios/cargo-deny-action@v1
