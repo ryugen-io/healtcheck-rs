@@ -9,32 +9,11 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  create-release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-      version: ${{ steps.get_version.outputs.version }}
-    steps:
-      - name: Get version from tag
-        id: get_version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-
   build:
     name: Build ${{ matrix.target }}
-    needs: create-release
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     strategy:
       matrix:
         include:
@@ -63,7 +42,7 @@ jobs:
 
       - name: Install cross
         if: matrix.cross
-        run: cargo install cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
 
       - name: Build
         run: |
@@ -77,18 +56,20 @@ jobs:
         run: |
           strip target/${{ matrix.target }}/release/healthcheckrs || true
 
+      - name: Get version
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
       - name: Compress binary
         run: |
           cd target/${{ matrix.target }}/release
-          tar -czf healthcheckrs-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.tar.gz healthcheckrs
+          tar -czf healthcheckrs-${{ steps.get_version.outputs.version }}-${{ matrix.target }}.tar.gz healthcheckrs
           cd -
 
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
+      - name: Upload to release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./target/${{ matrix.target }}/release/healthcheckrs-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.tar.gz
-          asset_name: healthcheckrs-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.tar.gz
-          asset_content_type: application/gzip
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload ${{ github.ref_name }} \
+            target/${{ matrix.target }}/release/healthcheckrs-${{ steps.get_version.outputs.version }}-${{ matrix.target }}.tar.gz \
+            --clobber
