@@ -65,40 +65,28 @@ cargo test tcp_check_localhost_succeeds
 
 ## Benchmarks
 
-Benchmarks use [divan](https://github.com/nvzqz/divan) for accurate performance measurements:
+End-to-end benchmarks using [hyperfine](https://github.com/sharkdp/hyperfine):
 
 ```bash
-# Run all benchmarks
-cargo bench -p healthcheck-core
-
-# Run specific benchmark
-cargo bench -p healthcheck-core --bench tcp_check
-
-# Generate flamegraphs (requires perf)
-cargo flamegraph --bench tcp_check -o flamegraph-tcp.svg -- --bench
+# Run benchmarks with hyperfine
+hyperfine --warmup 10 './target/release/healthcheckrs config.conf'
 ```
 
-### Performance Profiles
+### Performance Results
 
-#### TCP Check
-**Performance:** 19.52 µs median | 22.91 µs mean | Config parse: 96.5 ns
+Benchmarked on AMD Ryzen 7 7800X3D, 96GB RAM:
 
-![TCP Check Flamegraph](health-core/flamegraph-tcp.svg)
+| Command | Mean [ms] | Min [ms] | Max [ms] | Relative |
+|:---|---:|---:|---:|---:|
+| `TCP Check (localhost:22)` | 15.5 ± 0.2 | 15.2 | 16.3 | 1.00 |
+| `Process Check (systemd)` | 15.6 ± 0.6 | 15.3 | 24.0 | 1.01 ± 0.04 |
 
-#### HTTP Check
-**Performance:** Config parse (HTTP): 61.73 ns | Config parse (HTTPS): 62.41 ns
+Unit-level benchmarks available with [divan](https://github.com/nvzqz/divan):
 
-![HTTP Check Flamegraph](health-core/flamegraph-http.svg)
-
-#### Process Check
-**Performance:** Existing process: 83.14 µs median | Nonexistent: 1.535 ms median | Config parse: 41.07 ns
-
-![Process Check Flamegraph](health-core/flamegraph-process.svg)
-
-#### Database Check
-**Performance:** Config parse: 68.04 ns | Complex config: 68.66 ns
-
-![Database Check Flamegraph](health-core/flamegraph-database.svg)
+```bash
+# Run internal benchmarks
+cargo bench -p healthcheck-core
+```
 
 ## Usage
 
