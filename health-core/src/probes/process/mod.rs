@@ -2,7 +2,7 @@ mod config;
 
 pub use config::ProcessConfig;
 
-use crate::probes::{elapsed_ms, ProbeResult};
+use crate::probes::{ProbeResult, elapsed_ms};
 use crate::registry::HealthCheck;
 use log::{error, info};
 use std::collections::HashMap;
@@ -53,8 +53,7 @@ impl HealthCheck for ProcessCheck {
 
 /// Check if a process is running by reading /proc
 fn is_process_running(process_name: &str) -> Result<bool, String> {
-    let proc_dir = fs::read_dir("/proc")
-        .map_err(|e| format!("failed to read /proc: {e}"))?;
+    let proc_dir = fs::read_dir("/proc").map_err(|e| format!("failed to read /proc: {e}"))?;
 
     for entry in proc_dir.flatten() {
         // Only check numeric directories (PIDs)

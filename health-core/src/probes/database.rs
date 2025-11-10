@@ -1,6 +1,6 @@
 use crate::registry::HealthCheck;
 
-use super::{elapsed_ms, ProbeResult};
+use super::{ProbeResult, elapsed_ms};
 use log::{error, info};
 use std::collections::HashMap;
 use std::time::Instant;
@@ -20,7 +20,7 @@ impl DatabaseCheck {
                 .get("timeout_ms")
                 .and_then(|s| s.parse::<u64>().ok())
                 .unwrap_or(3000);
-            
+
             return Ok(Box::new(Self {
                 conn_str: conn_str.clone(),
                 timeout_ms,
@@ -56,7 +56,10 @@ impl DatabaseCheck {
             .unwrap_or(3000);
 
         let conn_str = if password.is_empty() {
-            format!("host={} port={} user={} dbname={}", host, port, user, dbname)
+            format!(
+                "host={} port={} user={} dbname={}",
+                host, port, user, dbname
+            )
         } else {
             format!(
                 "host={} port={} user={} password={} dbname={}",
@@ -83,7 +86,7 @@ impl HealthCheck for DatabaseCheck {
 
 fn check_database(conn_str: &str, timeout_ms: u64) -> ProbeResult {
     let start = Instant::now();
-    
+
     // Parse connection string and set timeout
     let config = match conn_str.parse::<postgres::Config>() {
         Ok(mut cfg) => {

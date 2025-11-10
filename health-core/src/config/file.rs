@@ -5,7 +5,7 @@ use std::path::Path;
 // Simple config format:
 // # comment
 // type:param1=value1,param2=value2
-// 
+//
 // Example:
 // tcp:host=localhost,port=21116,timeout_ms=2000
 // http:url=http://localhost:12008
@@ -19,8 +19,7 @@ pub struct CheckConfig {
 
 /// Parse a config file into check configurations
 pub fn parse_config_file<P: AsRef<Path>>(path: P) -> Result<Vec<CheckConfig>, String> {
-    let content = fs::read_to_string(path)
-        .map_err(|e| format!("failed to read config: {e}"))?;
+    let content = fs::read_to_string(path).map_err(|e| format!("failed to read config: {e}"))?;
     parse_config_str(&content)
 }
 
@@ -30,7 +29,7 @@ pub fn parse_config_str(content: &str) -> Result<Vec<CheckConfig>, String> {
 
     for (line_num, line) in content.lines().enumerate() {
         let line = line.trim();
-        
+
         // Skip empty lines and comments
         if line.is_empty() || line.starts_with('#') {
             continue;

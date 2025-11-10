@@ -1,7 +1,7 @@
 use crate::config::HttpConfig;
 use crate::registry::HealthCheck;
 
-use super::{elapsed_ms, ProbeResult};
+use super::{ProbeResult, elapsed_ms};
 use log::{error, info};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};

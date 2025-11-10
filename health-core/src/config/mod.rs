@@ -4,7 +4,7 @@ mod helpers;
 mod http;
 
 pub use database::DbConfig;
-pub use file::{parse_config_file, parse_config_str, CheckConfig};
+pub use file::{CheckConfig, parse_config_file, parse_config_str};
 pub use http::HttpConfig;
 
 pub const DEFAULT_HTTP_URL: &str = "http://localhost:12008";

@@ -2,7 +2,7 @@ mod config;
 
 pub use config::TcpConfig;
 
-use crate::probes::{elapsed_ms, ProbeResult};
+use crate::probes::{ProbeResult, elapsed_ms};
 use crate::registry::HealthCheck;
 use log::{error, info};
 use std::collections::HashMap;

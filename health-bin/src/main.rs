@@ -1,8 +1,6 @@
 use healthcheck_core::{
     config::parse_config_file,
-    probes::{
-        database::DatabaseCheck, http::HttpCheck, process::ProcessCheck, tcp::TcpCheck,
-    },
+    probes::{database::DatabaseCheck, http::HttpCheck, process::ProcessCheck, tcp::TcpCheck},
     registry::CheckRegistry,
 };
 use log::{error, info};
@@ -112,7 +110,10 @@ fn print_results(results: &[CheckResult], overall: bool) {
         let comma = if i < results.len() - 1 { "," } else { "" };
         println!("    {{");
         println!("      \"type\": \"{}\",", result.check_type);
-        println!("      \"ok\": {},", if result.ok { "true" } else { "false" });
+        println!(
+            "      \"ok\": {},",
+            if result.ok { "true" } else { "false" }
+        );
         println!("      \"latency_ms\": {},", result.latency_ms);
 
         if let Some(err) = &result.error {
