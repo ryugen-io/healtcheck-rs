@@ -1,6 +1,6 @@
 # Healthcheck
 
-[![CI](https://github.com/ryugen-io/healtcheck-rs/workflows/CI/badge.svg)](https://github.com/ryugen-io/healtcheck-rs/actions)
+[![CI](https://github.com/ryugen-io/healthcheck-rs/workflows/CI/badge.svg)](https://github.com/ryugen-io/healthcheck-rs/actions)
 ![Rust Edition](https://img.shields.io/badge/rust-2024-orange?logo=rust)
 ![Rust Version](https://img.shields.io/badge/rustc-1.91+-blue?logo=rust)
 ![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-green)
