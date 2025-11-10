@@ -160,5 +160,8 @@ jobs:
       - name: Setup Rust 1.91
         uses: dtolnay/rust-toolchain@1.91
 
+      - name: Install cargo-deny
+        run: cargo install --locked cargo-deny
+
       - name: Run cargo-deny
-        uses: EmbarkStudios/cargo-deny-action@v1
+        run: cargo deny check
