@@ -1,5 +1,4 @@
 use healthcheck_core::probes::process::ProcessCheck;
-use healthcheck_core::registry::HealthCheck;
 use std::collections::HashMap;
 
 #[test]

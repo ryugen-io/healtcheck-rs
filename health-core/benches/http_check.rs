@@ -15,21 +15,14 @@ fn http_config_parse(bencher: Bencher) {
     );
     params.insert("timeout_ms".to_string(), "5000".to_string());
 
-    bencher.bench(|| {
-        HttpCheck::from_params(&params).unwrap()
-    });
+    bencher.bench(|| HttpCheck::from_params(&params).unwrap());
 }
 
 #[divan::bench]
 fn http_config_parse_https(bencher: Bencher) {
     let mut params = HashMap::new();
-    params.insert(
-        "url".to_string(),
-        "https://example.com/health".to_string(),
-    );
+    params.insert("url".to_string(), "https://example.com/health".to_string());
     params.insert("timeout_ms".to_string(), "5000".to_string());
 
-    bencher.bench(|| {
-        HttpCheck::from_params(&params).unwrap()
-    });
+    bencher.bench(|| HttpCheck::from_params(&params).unwrap());
 }

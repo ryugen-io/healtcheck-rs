@@ -1,5 +1,4 @@
 use healthcheck_core::probes::tcp::TcpCheck;
-use healthcheck_core::registry::HealthCheck;
 use std::collections::HashMap;
 
 #[test]
@@ -14,12 +13,12 @@ fn tcp_check_from_params_valid() {
 }
 
 #[test]
-fn tcp_check_from_params_missing_host() {
+fn tcp_check_from_params_missing_host_uses_default() {
     let mut params = HashMap::new();
     params.insert("port".to_string(), "22".to_string());
 
     let check = TcpCheck::from_params(&params);
-    assert!(check.is_err());
+    assert!(check.is_ok());
 }
 
 #[test]

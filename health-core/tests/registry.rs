@@ -22,9 +22,9 @@ fn registry_unknown_check_type() {
     let params = HashMap::new();
     let result = registry.create_check("unknown", &params);
     assert!(result.is_err());
-    assert!(result
-        .unwrap_err()
-        .contains("unknown check type"));
+    if let Err(e) = result {
+        assert!(e.contains("unknown check type"));
+    }
 }
 
 #[test]

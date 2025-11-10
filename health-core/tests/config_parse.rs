@@ -59,8 +59,7 @@ fn parse_config_str_invalid_format() {
 
 #[test]
 fn parse_config_str_database() {
-    let config =
-        "database:conn_str=postgresql://user:pass@localhost:5432/db,timeout_ms=3000";
+    let config = "database:conn_str=postgresql://user:pass@localhost:5432/db,timeout_ms=3000";
     let result = parse_config_str(config);
     assert!(result.is_ok());
     let configs = result.unwrap();

@@ -5,6 +5,10 @@ edition = "2024"
 rust-version = "1.91"
 license = "MIT OR Apache-2.0"
 
+[[bin]]
+name = "healthcheck"
+path = "src/main.rs"
+
 [dependencies]
 healthcheck-core = { path = "../health-core" }
 log = "0.4"

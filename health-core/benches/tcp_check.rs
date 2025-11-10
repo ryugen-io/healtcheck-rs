@@ -14,12 +14,9 @@ fn tcp_check_localhost(bencher: Bencher) {
     params.insert("port".to_string(), "22".to_string());
     params.insert("timeout_ms".to_string(), "1000".to_string());
 
-    let check = TcpCheck::from_params(&params)
-        .expect("valid params");
+    let check = TcpCheck::from_params(&params).expect("valid params");
 
-    bencher.bench(|| {
-        check.check()
-    });
+    bencher.bench(|| check.check());
 }
 
 #[divan::bench]
@@ -29,7 +26,5 @@ fn tcp_config_parse(bencher: Bencher) {
     params.insert("port".to_string(), "22".to_string());
     params.insert("timeout_ms".to_string(), "1000".to_string());
 
-    bencher.bench(|| {
-        TcpCheck::from_params(&params).unwrap()
-    });
+    bencher.bench(|| TcpCheck::from_params(&params).unwrap());
 }
