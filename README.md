@@ -8,13 +8,13 @@
 ![Tests](https://img.shields.io/badge/tests-21%20passing-brightgreen?logo=checkmarx)
 ![Benchmarks](https://img.shields.io/badge/benchmarks-4%20suites-blue?logo=timer)
 ![Lines of Code](https://img.shields.io/badge/max%20LOC-150%2Ffile-yellow)
-![Last Commit](https://img.shields.io/badge/commit-5646123-blue?logo=git)
+![Last Commit](https://img.shields.io/badge/commit-a88ca5a-blue?logo=git)
 
 Modular, config-driven health check system for Docker containers.
 
-A small project as I am just learning rust and swapped to linux in general.
-bare with me.
-built with my buddy claude code.
+A small project as I am just learning Rust and swapped to Linux in general.
+Bear with me.
+Built with my buddy Claude Code.
 
 ## Features
 
