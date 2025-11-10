@@ -74,6 +74,17 @@ hyperfine --warmup 10 './target/release/healthcheckrs config.conf'
 
 ### Performance Results
 
+#### ARM64 (Container)
+
+Benchmarked on Raspberry Pi 5 (Cortex-A76, 4 cores, 8GB RAM, Arch Linux ARM) in Ubuntu 24.04 Docker container:
+
+| Command | Mean [ms] | Min [ms] | Max [ms] | Relative |
+|:---|---:|---:|---:|---:|
+| `TCP Check (localhost:22)` | 58.2 ± 12.8 | 33.1 | 85.6 | 1.07 ± 0.36 |
+| `Process Check (sshd)` | 54.4 ± 13.8 | 32.4 | 79.2 | 1.00 |
+
+#### x86_64 (Native)
+
 Benchmarked on AMD Ryzen 7 7800X3D, 96GB RAM (binary in tmpfs):
 
 | Command | Mean [µs] | Min [µs] | Max [µs] | Relative |
@@ -87,6 +98,27 @@ Unit-level benchmarks available with [divan](https://github.com/nvzqz/divan):
 # Run internal benchmarks
 cargo bench -p healthcheck-core
 ```
+
+### Benchmark Container
+
+Run comprehensive benchmarks in a containerized environment:
+
+```bash
+# Using docker-compose
+docker-compose -f tests/docker-compose.bench.yml up --build
+
+# Or manually
+docker build -f tests/Dockerfile.bench -t healthcheck-bench .
+docker run --rm healthcheck-bench
+```
+
+The benchmark container includes:
+- Full Rust toolchain for building from source
+- hyperfine for end-to-end benchmarks
+- criterion/divan for detailed unit-level profiling with HTML reports
+- SSH server for realistic TCP check testing
+
+See [`tests/README.bench.md`](tests/README.bench.md) for detailed usage.
 
 ## Usage
 

@@ -1,0 +1,24 @@
+services:
+  healthcheck-bench:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile.bench
+    container_name: healthcheck-bench
+    volumes:
+      # Mount source code
+      - ../:/workspace:ro
+      # Mount target directory for build artifacts (rw)
+      - cargo-target:/workspace/target
+      # Mount cargo cache for faster builds
+      - cargo-cache:/usr/local/cargo/registry
+    environment:
+      - CARGO_TERM_COLOR=always
+    # Keep container running for interactive use
+    stdin_open: true
+    tty: true
+    # Or run benchmarks immediately
+    # command: ["/usr/local/bin/run-bench.sh"]
+
+volumes:
+  cargo-target:
+  cargo-cache:

@@ -1,0 +1,66 @@
+FROM rust:1.91-slim-bookworm
+
+# Install runtime dependencies and tools
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    ca-certificates \
+    openssh-server \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install hyperfine
+RUN ARCH=$(dpkg --print-architecture) && \
+    wget https://github.com/sharkdp/hyperfine/releases/download/v1.18.0/hyperfine_1.18.0_${ARCH}.deb && \
+    dpkg -i hyperfine_1.18.0_${ARCH}.deb && \
+    rm hyperfine_1.18.0_${ARCH}.deb
+
+# Install criterion-table for markdown export
+RUN cargo install criterion-table
+
+# Setup SSH for TCP check tests
+RUN mkdir -p /run/sshd && \
+    echo 'root:test' | chpasswd && \
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+# Create workspace
+WORKDIR /workspace
+
+# Create benchmark script
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+echo "==> Starting SSH server..."\n\
+/usr/sbin/sshd\n\
+sleep 1\n\
+\n\
+echo "==> Building release binary..."\n\
+cargo build --release\n\
+\n\
+echo ""\n\
+echo "==> Running hyperfine (end-to-end benchmarks)..."\n\
+echo ""\n\
+hyperfine --warmup 10 --min-runs 100 --export-markdown /tmp/hyperfine-results.md \\\n\
+  --command-name "TCP Check (localhost:22)" "./target/release/healthcheckrs /tmp/tcp.conf" \\\n\
+  --command-name "Process Check (sshd)" "./target/release/healthcheckrs /tmp/process.conf"\n\
+\n\
+cat /tmp/hyperfine-results.md\n\
+\n\
+echo ""\n\
+echo "==> Running criterion (unit-level benchmarks with HTML reports)..."\n\
+echo ""\n\
+cargo bench -p healthcheck-core\n\
+\n\
+echo ""\n\
+echo "==> Benchmark Results"\n\
+echo "Hyperfine results: /tmp/hyperfine-results.md"\n\
+echo "Criterion reports: target/criterion/"\n\
+echo ""\n\
+echo "To view criterion HTML reports, copy them from the container:"\n\
+echo "  docker cp healthcheck-bench:/workspace/target/criterion ./criterion-reports"\n\
+' > /usr/local/bin/run-bench.sh && chmod +x /usr/local/bin/run-bench.sh
+
+# Create test configs
+RUN echo "tcp:host=127.0.0.1,port=22,timeout_ms=1000" > /tmp/tcp.conf && \
+    echo "process:name=sshd" > /tmp/process.conf
+
+CMD ["/usr/local/bin/run-bench.sh"]
