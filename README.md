@@ -12,7 +12,7 @@ Modular, config-driven healthcheck system for Docker containers.
 
 A small project as I am just learning rust and swapped to linux in general.
 bare with me.
-built with my buddy codex.
+built with my buddy claude code.
 
 ## Features
 
