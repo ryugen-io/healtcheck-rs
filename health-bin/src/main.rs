@@ -53,7 +53,7 @@ fn main() {
     info!("Running {} health checks", check_configs.len());
 
     let registry = build_registry();
-    let mut results = Vec::new();
+    let mut results = Vec::with_capacity(check_configs.len());
     let mut overall_ok = true;
 
     for check_config in check_configs {
