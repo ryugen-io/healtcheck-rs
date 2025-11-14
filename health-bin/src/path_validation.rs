@@ -3,6 +3,8 @@ use std::path::{Path, PathBuf};
 
 /// Validate and safely resolve output path to prevent path traversal attacks
 /// Uses canonicalization to prevent TOCTOU vulnerabilities
+///
+/// This function is public for testing purposes
 pub fn validate_output_path(path: &str) -> Result<PathBuf, String> {
     let path_obj = Path::new(path);
 

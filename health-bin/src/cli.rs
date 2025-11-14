@@ -56,7 +56,9 @@ pub enum CliAction {
 }
 
 /// Parse --output flag from arguments, handling edge cases
-fn parse_output_flag(args: &[String], command: &str) -> Option<String> {
+///
+/// This function is public for testing purposes
+pub fn parse_output_flag(args: &[String], command: &str) -> Option<String> {
     // Find the --output flag position in the original args vector
     let mut output_idx = None;
     for (i, arg) in args.iter().enumerate() {
