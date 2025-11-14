@@ -4,32 +4,32 @@ This document explains the CI/CD configuration optimizations to reduce costs.
 
 ## Current Configuration
 
-### Workflows that RUN on every master/main push:
+### Active Workflows:
 - ✅ **ci.yml** - Full CI pipeline (format, clippy, build, test, audit, deny)
+  - Runs on: PR pushes + master/main pushes
+  - Can be skipped with `.skip-ci` file
 - ✅ **docs-check.yml** - Documentation validation (only on .md file changes)
+  - Runs on: PR pushes + master/main pushes
+  - Can be skipped with `.skip-ci` file
 - ✅ **release.yml** - Release automation (only on tags)
 
-### Workflows that are DISABLED:
-- ❌ **Pull Request CI** - Commented out in ci.yml (lines 12-19)
-- ❌ **Pull Request Docs Check** - Commented out in docs-check.yml (lines 8-11)
+### Disabled Workflows:
 - ❌ **claude-code-review.yml** - Renamed to `.yml.disabled`
 
-### Workflows that are EVENT-TRIGGERED (no cost impact):
+### Event-Triggered Workflows (no cost impact):
 - ✅ **claude.yml** - Only runs when @claude is mentioned in issues/comments
 - ✅ **release.yml** - Only runs on tag pushes
 
-## Cost Savings
+## Cost Control Strategy
 
-**Before:**
-- CI runs on every PR push (sync)
-- CI runs on every master/main push
-- Docs check on every PR with .md changes
-- Claude code review on every PR
+**Default Behavior:**
+- CI runs on every PR push and master/main push
+- Provides full automated validation
 
-**After:**
-- CI runs ONLY on master/main pushes (after merge)
-- Docs check ONLY on master/main pushes
-- No automatic PR checks (saves ~70% of CI runs)
+**Cost Savings:**
+- Create `.skip-ci` file when you want to skip ALL CI runs
+- Perfect for experimental work, rapid iteration, or cost control
+- Remove `.skip-ci` when you need CI validation again
 
 ## Skipping CI on Demand
 
@@ -59,54 +59,77 @@ git push
 
 **Important:** The `.skip-ci` file affects ALL branches, so remove it before merging important changes.
 
-## Re-enabling PR Checks
+## Usage Examples
 
-If you want to re-enable PR checks for specific PRs or periods:
+### Example 1: Normal Development (CI enabled)
+```bash
+# Work on feature branch
+git checkout -b feature/new-thing
 
-### Option 1: Re-enable PR CI for all PRs
-Uncomment lines 12-19 in `.github/workflows/ci.yml`:
-```yaml
-pull_request:
-  branches: [ master, main ]
-  paths-ignore:
-    - '**.md'
-    - 'LICENSE*'
-    - '.gitignore'
-    - '.github/workflows/release.yml'
-    - 'AGENTS.md'
+# Make changes, CI runs on PRs automatically
+git add .
+git commit -m "feat: add new thing"
+git push
+
+# PR gets full CI validation
+# Merge when CI passes
 ```
 
-### Option 2: Re-enable Claude Code Review
-Rename `.github/workflows/claude-code-review.yml.disabled` back to `.yml`
-
-### Option 3: Manual PR checks
-Before merging important PRs, run locally:
+### Example 2: Rapid Iteration (CI disabled)
 ```bash
-./rebuild.sh  # Runs fmt, clippy, auditable build
-cargo test    # Runs all tests
+# Skip CI for experimental work
+touch .skip-ci
+git add .skip-ci
+git commit -m "chore: skip CI for experimental work"
+git push
+
+# Make rapid changes without CI overhead
+git add .
+git commit -m "wip: trying different approach"
+git push  # No CI runs
+
+# Re-enable CI when ready
+rm .skip-ci
+git add .skip-ci
+git commit -m "chore: re-enable CI"
+git push  # CI runs again
+```
+
+### Example 3: Documentation Changes (CI disabled)
+```bash
+# Skip CI for doc-only changes
+touch .skip-ci
+git add .skip-ci
+git commit -m "docs: update README [skip ci]"
+git push
+
+# Remove .skip-ci when done with docs
+rm .skip-ci
+git add .skip-ci
+git commit -m "chore: re-enable CI"
+git push
 ```
 
 ## Recommended Workflow
 
-1. **Development**: Work on feature branches, test locally with `./rebuild.sh`
-2. **Pre-merge**: Run `cargo test` and `cargo clippy -- -D warnings` locally
-3. **Merge**: CI runs automatically on master/main after merge
-4. **Issues**: If CI fails on master, fix immediately (or revert)
+1. **Normal PRs**: Let CI run automatically for validation
+2. **Experimental work**: Create `.skip-ci` to save costs during iteration
+3. **Before merge**: Remove `.skip-ci` to validate final state
+4. **After merge**: CI runs on master/main automatically
 
-## Trade-offs
+## Benefits
 
-**Pros:**
-- Significant cost savings (50-70% reduction in CI minutes)
-- Still get CI validation on all code that lands in master
-- Local testing encourages better development practices
+**Flexibility:**
+- Full CI validation when you need it
+- Cost control when you don't
+- Fine-grained control per commit
 
-**Cons:**
-- No automated PR validation before merge
-- Broken PRs can land in master (though CI will catch them post-merge)
-- Requires discipline to test locally before merging
+**Cost Savings:**
+- Skip CI during experimental phases
+- Avoid wasting CI minutes on WIP commits
+- Still get full validation when ready
 
-**Mitigation:**
-- Use branch protection rules requiring local checks
-- Only merge PRs you've tested locally
-- Enable PR CI temporarily for high-risk changes
-- Use `git revert` if something breaks master
+**Best Practices:**
+- Always remove `.skip-ci` before merging important changes
+- Use `.skip-ci` liberally during development
+- Let CI run on final commits before merge

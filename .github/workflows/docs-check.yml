@@ -5,10 +5,10 @@ on:
     branches: [ master, main ]
     paths:
       - '**.md'
-  #   pull_request:
-  #     branches: [ master, main ]
-  #     paths:
-  #       - '**.md'
+  pull_request:
+    branches: [ master, main ]
+    paths:
+      - '**.md'
 
 jobs:
   # Check if CI should be skipped based on .skip-ci file
