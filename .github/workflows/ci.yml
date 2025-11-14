@@ -25,10 +25,15 @@ env:
 jobs:
   # Fast checks that run in parallel
   format:
-    name: Format Check
+    name: Auto-Format
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.head_ref || github.ref }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -36,8 +41,26 @@ jobs:
           toolchain: stable
           components: rustfmt
 
-      - name: Check formatting
-        run: cargo fmt --all -- --check
+      - name: Run cargo fmt
+        run: cargo fmt --all
+
+      - name: Check for changes
+        id: verify-changed-files
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push formatting changes
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -A
+          git commit -m "chore: auto-format code with cargo fmt [skip ci]"
+          git push
 
   clippy:
     name: Clippy Lint
