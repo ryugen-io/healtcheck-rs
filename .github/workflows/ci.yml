@@ -34,17 +34,40 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.head_ref || github.ref }}
+          fetch-depth: 0
+
+      - name: Check if Rust files changed
+        id: check-rust-files
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            # For PRs, check files changed in the PR
+            if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q '\.rs$'; then
+              echo "rust_changed=true" >> $GITHUB_OUTPUT
+            else
+              echo "rust_changed=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            # For pushes, check files in the last commit
+            if git diff --name-only HEAD^ HEAD | grep -q '\.rs$'; then
+              echo "rust_changed=true" >> $GITHUB_OUTPUT
+            else
+              echo "rust_changed=false" >> $GITHUB_OUTPUT
+            fi
+          fi
 
       - name: Install Rust
+        if: steps.check-rust-files.outputs.rust_changed == 'true'
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
           components: rustfmt
 
       - name: Run cargo fmt
+        if: steps.check-rust-files.outputs.rust_changed == 'true'
         run: cargo fmt --all
 
-      - name: Check for changes
+      - name: Check for formatting changes
+        if: steps.check-rust-files.outputs.rust_changed == 'true'
         id: verify-changed-files
         run: |
           if git diff --quiet; then
@@ -54,7 +77,7 @@ jobs:
           fi
 
       - name: Commit and push formatting changes
-        if: steps.verify-changed-files.outputs.changed == 'true'
+        if: steps.check-rust-files.outputs.rust_changed == 'true' && steps.verify-changed-files.outputs.changed == 'true'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
