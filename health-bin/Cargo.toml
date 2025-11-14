@@ -4,9 +4,17 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.91"
 license = "MIT OR Apache-2.0"
+description = "Lightweight health check tool with API server and CLI modes"
+repository = "https://github.com/ryugen-io/healthcheck-rs"
+homepage = "https://github.com/ryugen-io/healthcheck-rs"
+documentation = "https://github.com/ryugen-io/healthcheck-rs#readme"
+keywords = ["health-check", "monitoring", "cli", "api", "server"]
+categories = ["command-line-utilities", "network-programming"]
+readme = "../README.md"
+authors = ["ryugen-io"]
 
 [[bin]]
-name = "healthcheckrs"
+name = "healthcheck"
 path = "src/main.rs"
 
 [dependencies]

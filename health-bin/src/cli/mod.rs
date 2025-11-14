@@ -1,0 +1,159 @@
+//! Command-line interface argument parsing and help text
+//!
+//! This module handles all CLI interactions including:
+//! - Argument parsing for commands (generate-bin, generate-conf, serve, watch)
+//! - Flag parsing (--help, --version, --output)
+//! - Help text and version display
+//! - Command routing to appropriate handlers
+//!
+//! The CLI is designed to be simple and intuitive, with position-independent
+//! flag parsing and comprehensive error messages for common mistakes.
+
+use std::env;
+
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+pub fn print_version() {
+    println!("healthcheck v{}", VERSION);
+}
+
+pub fn print_help() {
+    println!("healthcheck v{} - Lightweight health check tool", VERSION);
+    println!();
+    println!("USAGE:");
+    println!("    healthcheck [OPTIONS] [CONFIG_FILE]");
+    println!("    healthcheck <COMMAND>");
+    println!();
+    println!("ARGS:");
+    println!("    <CONFIG_FILE>    Path to config file [default: healthcheck.config]");
+    println!();
+    println!("OPTIONS:");
+    println!("    -h, --help       Print help information");
+    println!("    -v, --version    Print version information");
+    println!();
+    println!("COMMANDS:");
+    println!("    generate-bin     Generate standalone binary for deployment");
+    println!("    generate-conf    Generate example configuration file");
+    println!("    serve            Start HTTP API server (coming soon)");
+    println!("    watch            Watch mode with continuous monitoring (coming soon)");
+    println!();
+    println!("EXAMPLES:");
+    println!("    # Run health checks from config");
+    println!("    healthcheck myconfig.conf");
+    println!();
+    println!("    # Generate binary for container deployment");
+    println!("    healthcheck generate-bin");
+    println!("    healthcheck generate-bin --output ./bin");
+    println!();
+    println!("    # Generate example configuration");
+    println!("    healthcheck generate-conf");
+    println!("    healthcheck generate-conf --output custom.conf");
+    println!();
+    println!("CONFIG FORMAT:");
+    println!("    tcp:host=localhost,port=8080,timeout_ms=1000");
+    println!("    http:url=http://localhost:8080/health,timeout_ms=5000");
+    println!("    database:conn_str=postgresql://user:pass@localhost/db");
+    println!("    process:name=myapp");
+}
+
+pub enum CliAction {
+    Help,
+    Version,
+    GenerateBin { output_dir: Option<String> },
+    GenerateConf { output_path: Option<String> },
+    Serve,
+    Watch,
+    RunChecks { config_path: String },
+}
+
+/// Parse --output flag from arguments, handling edge cases
+///
+/// This function is public for testing purposes
+fn parse_output_flag(args: &[String], command: &str) -> Option<String> {
+    // Find the --output flag position in the original args vector
+    let mut output_idx = None;
+    for (i, arg) in args.iter().enumerate() {
+        // Skip program name and command
+        if i < 2 {
+            continue;
+        }
+        if arg == "--output" {
+            if output_idx.is_some() {
+                eprintln!("Warning: Multiple --output flags provided, using the first one");
+                break;
+            }
+            output_idx = Some(i);
+        }
+    }
+
+    if let Some(idx) = output_idx {
+        // Check if the value is provided
+        match args.get(idx + 1) {
+            Some(path) if !path.starts_with("--") => Some(path.clone()),
+            Some(flag) => {
+                eprintln!(
+                    "Error: --output flag value cannot be another flag: {}",
+                    flag
+                );
+                eprintln!("Usage: healthcheck {} --output <path>", command);
+                std::process::exit(2);
+            }
+            None => {
+                eprintln!("Error: --output requires a path argument");
+                eprintln!("Usage: healthcheck {} --output <path>", command);
+                std::process::exit(2);
+            }
+        }
+    } else {
+        None
+    }
+}
+
+pub fn parse_args() -> CliAction {
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() > 1 {
+        match args[1].as_str() {
+            "-h" | "--help" => return CliAction::Help,
+            "-v" | "--version" => return CliAction::Version,
+            "generate-bin" => {
+                let output_dir = parse_output_flag(&args, "generate-bin");
+                return CliAction::GenerateBin { output_dir };
+            }
+            "generate-conf" => {
+                let output_path = parse_output_flag(&args, "generate-conf");
+                return CliAction::GenerateConf { output_path };
+            }
+            "serve" => {
+                if args.len() > 2 {
+                    eprintln!("Warning: 'serve' command does not accept additional arguments yet");
+                }
+                return CliAction::Serve;
+            }
+            "watch" => {
+                if args.len() > 2 {
+                    eprintln!("Warning: 'watch' command does not accept additional arguments yet");
+                }
+                return CliAction::Watch;
+            }
+            path => {
+                // Validate that this looks like a config file path, not a typo
+                if path.starts_with("--") {
+                    eprintln!("Error: Unknown flag: {}", path);
+                    eprintln!("Run 'healthcheck --help' for usage information");
+                    std::process::exit(2);
+                }
+                return CliAction::RunChecks {
+                    config_path: path.to_string(),
+                };
+            }
+        }
+    }
+
+    CliAction::RunChecks {
+        config_path: "healthcheck.config".to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests;

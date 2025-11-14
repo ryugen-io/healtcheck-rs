@@ -1,20 +1,10 @@
+mod common;
+
 use std::env;
 use std::fs;
-use std::path::PathBuf;
 use std::process::Command;
 
-fn get_healthcheck_bin() -> PathBuf {
-    env::var("CARGO_BIN_EXE_healthcheckrs")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| {
-            let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-            path.pop();
-            path.push("target");
-            path.push("debug");
-            path.push("healthcheckrs");
-            path
-        })
-}
+use common::get_healthcheck_bin;
 
 #[test]
 fn healthcheck_exits_on_invalid_config() {
@@ -54,5 +44,15 @@ fn healthcheck_parses_valid_config() {
 
     fs::remove_file(&config_path).ok();
 
-    assert!(output.status.success());
+    // Config should be parsed successfully and return JSON output
+    // The check itself might fail (port not open), but parsing should work
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("\"overall\":"),
+        "Should output JSON with overall status"
+    );
+    assert!(
+        stdout.contains("\"checks\":"),
+        "Should output JSON with checks array"
+    );
 }

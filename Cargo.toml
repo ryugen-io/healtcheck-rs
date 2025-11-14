@@ -13,3 +13,6 @@ codegen-units = 1
 strip = true
 panic = "abort"
 debug = false
+
+# Always build with: cargo auditable build --release
+# This embeds dependency information for supply chain security auditing

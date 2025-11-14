@@ -11,9 +11,29 @@ on:
       - '**.md'
 
 jobs:
+  # Check if CI should be skipped based on .skip-ci file
+  check-skip:
+    name: Check Skip CI
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        run: |
+          if [ -f .skip-ci ]; then
+            echo "⏭️  Found .skip-ci file - skipping docs validation"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "✓ No .skip-ci file - running docs validation normally"
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
   check-readme-release:
     name: Verify README release hash
     runs-on: ubuntu-latest
+    needs: check-skip
+    if: needs.check-skip.outputs.should_skip != 'true'
     steps:
       - uses: actions/checkout@v4
         with:

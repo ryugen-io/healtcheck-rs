@@ -1,33 +1,87 @@
-mod writer;
+// NOTE: We use manual JSON serialization instead of serde_json to maintain minimal dependencies
+// and small binary size. This project philosophy prioritizes:
+// 1. Minimal dependencies (currently only log + env_logger)
+// 2. Small binary size (~517KB compressed with UPX)
+// 3. Fast compilation times
+//
+// The current implementation is RFC 8259 compliant with comprehensive test coverage (10 tests).
+// If JSON structure becomes more complex in the future, consider switching to serde_json.
 
-use writer::JsonWriter;
-
-pub struct HealthStatus {
-    pub http: bool,
-    pub http_latency_ms: u64,
-    pub http_error: Option<String>,
-    pub database: bool,
-    pub db_latency_ms: u64,
-    pub db_error: Option<String>,
-    pub memory_used_mb: u64,
-    pub memory_total_mb: u64,
-    pub memory_percent: f32,
-    pub overall: bool,
+#[derive(Debug)]
+pub struct CheckResult {
+    pub check_type: String,
+    pub ok: bool,
+    pub latency_ms: u64,
+    pub error: Option<String>,
 }
 
-impl HealthStatus {
-    pub fn to_pretty_json(&self) -> String {
-        let mut json = JsonWriter::new();
-        json.bool("http", self.http);
-        json.u64("http_latency_ms", self.http_latency_ms);
-        json.str_opt("http_error", self.http_error.as_deref());
-        json.bool("database", self.database);
-        json.u64("db_latency_ms", self.db_latency_ms);
-        json.str_opt("db_error", self.db_error.as_deref());
-        json.u64("memory_used_mb", self.memory_used_mb);
-        json.u64("memory_total_mb", self.memory_total_mb);
-        json.f32("memory_percent", self.memory_percent);
-        json.bool("overall", self.overall);
-        json.finish()
+pub fn print_results(results: &[CheckResult], overall: bool) {
+    println!("{{");
+    println!("  \"overall\": {},", if overall { "true" } else { "false" });
+    println!("  \"checks\": [");
+
+    for (i, result) in results.iter().enumerate() {
+        let comma = if i < results.len() - 1 { "," } else { "" };
+        println!("    {{");
+        println!("      \"type\": \"{}\",", result.check_type);
+        println!(
+            "      \"ok\": {},",
+            if result.ok { "true" } else { "false" }
+        );
+        println!("      \"latency_ms\": {},", result.latency_ms);
+
+        if let Some(err) = &result.error {
+            let escaped = escape_json_string(err);
+            println!("      \"error\": \"{}\"", escaped);
+        } else {
+            println!("      \"error\": null");
+        }
+
+        println!("    }}{}", comma);
     }
+
+    println!("  ]");
+    println!("}}");
 }
+
+pub fn print_error_json(message: &str) {
+    let escaped = escape_json_string(message);
+    println!("{{");
+    println!("  \"overall\": false,");
+    println!("  \"error\": \"{}\"", escaped);
+    println!("}}");
+}
+
+// Extra capacity for escape sequences in JSON strings
+const JSON_ESCAPE_BUFFER: usize = 16;
+
+/// Escape special characters in JSON strings per RFC 8259
+///
+/// This function is public for testing purposes
+fn escape_json_string(s: &str) -> String {
+    // Pre-allocate with some extra capacity for escape sequences
+    let mut result = String::with_capacity(s.len() + JSON_ESCAPE_BUFFER);
+
+    for ch in s.chars() {
+        match ch {
+            '\\' => result.push_str("\\\\"),
+            '"' => result.push_str("\\\""),
+            '/' => result.push_str("\\/"), // Solidus (optional but recommended for XSS prevention)
+            '\n' => result.push_str("\\n"),
+            '\r' => result.push_str("\\r"),
+            '\t' => result.push_str("\\t"),
+            '\u{0008}' => result.push_str("\\b"), // backspace
+            '\u{000C}' => result.push_str("\\f"), // form feed
+            // Escape all other control characters (U+0000 to U+001F)
+            c if c < '\u{0020}' => {
+                result.push_str(&format!("\\u{:04x}", c as u32));
+            }
+            _ => result.push(ch),
+        }
+    }
+
+    result
+}
+
+#[cfg(test)]
+mod tests;
