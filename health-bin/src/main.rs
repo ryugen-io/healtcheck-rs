@@ -1,5 +1,6 @@
 mod cli;
 mod commands;
+mod path_validation;
 mod runner;
 mod status;
 
