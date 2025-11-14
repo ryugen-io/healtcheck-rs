@@ -4,6 +4,14 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.91"
 license = "MIT OR Apache-2.0"
+description = "Core library for lightweight health checks (TCP, HTTP, database, process)"
+repository = "https://github.com/ryugen-io/healthcheck-rs"
+homepage = "https://github.com/ryugen-io/healthcheck-rs"
+documentation = "https://docs.rs/healthcheck-core"
+keywords = ["health-check", "monitoring", "tcp", "http", "database"]
+categories = ["network-programming", "web-programming"]
+readme = "../README.md"
+authors = ["ryugen-io"]
 
 [dependencies]
 log = "0.4"
