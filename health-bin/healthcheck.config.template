@@ -1,0 +1,34 @@
+# HealthCheck RS Configuration
+# Format: check_type:param1=value1,param2=value2
+
+# SECURITY WARNING:
+# This config contains example credentials. DO NOT use these in production!
+# Use environment variables for sensitive data:
+#   - Set DB_PASSWORD env var and reference it in your application
+#   - Use secrets management (Vault, AWS Secrets Manager, etc.)
+#   - Never commit real credentials to version control
+
+# TCP Port Checks
+# Check if a TCP port is open and accepting connections
+tcp:host=localhost,port=8080,timeout_ms=1000
+tcp:host=localhost,port=5432,timeout_ms=1000
+
+# HTTP Endpoint Checks
+# Check if HTTP endpoints return 2xx or 3xx status codes
+http:url=http://localhost:8080/health,timeout_ms=5000
+http:url=http://localhost:3000/api/health,timeout_ms=3000
+
+# Database Checks (PostgreSQL)
+# SECURITY: Replace 'user:password' with environment variables in production!
+# Example: postgresql://${DB_USER}:${DB_PASSWORD}@localhost:5432/dbname
+database:conn_str=postgresql://user:CHANGE_ME@localhost:5432/dbname,timeout_ms=3000
+# Or use individual parameters:
+# database:host=localhost,port=5432,user=postgres,password=CHANGE_ME,dbname=mydb,timeout_ms=3000
+
+# Process Checks (Linux only)
+# Check if a process is running by name
+process:name=nginx
+process:name=postgres
+
+# Multiple checks can be combined
+# All checks run in parallel for fast results
