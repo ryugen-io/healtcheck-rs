@@ -1,3 +1,12 @@
+// NOTE: We use manual JSON serialization instead of serde_json to maintain minimal dependencies
+// and small binary size. This project philosophy prioritizes:
+// 1. Minimal dependencies (currently only log + env_logger)
+// 2. Small binary size (~517KB compressed with UPX)
+// 3. Fast compilation times
+//
+// The current implementation is RFC 8259 compliant with comprehensive test coverage (10 tests).
+// If JSON structure becomes more complex in the future, consider switching to serde_json.
+
 #[derive(Debug)]
 pub struct CheckResult {
     pub check_type: String,

@@ -147,3 +147,6 @@ pub(crate) fn validate_output_path(path: &str) -> Result<PathBuf, String> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod edge_case_tests;

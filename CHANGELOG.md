@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- New CLI commands: `generate-bin` and `generate-conf` for deployment workflows
+- TTY detection for non-interactive environments (CI/CD compatibility)
+- Comprehensive path validation with system directory protection
+- Support for extensionless files (Makefile, Dockerfile, healthcheck.config)
+- 21 unit tests + 13 integration tests (34 total)
+- cargo-auditable integration for supply chain security
+
+### Changed
+- **BREAKING**: Binary renamed from `healthcheckrs` to `healthcheck`
+  - Migration: Update your Docker COPY/deployment scripts to use new binary name
+  - Update systemd service files, cron jobs, and CI/CD pipelines
+- Reorganized modules to idiomatic Rust structure (src/<module>/mod.rs)
+- Improved JSON escaping for RFC 8259 compliance (solidus, control chars)
+- Enhanced path canonicalization to prevent TOCTOU vulnerabilities
+- Expanded system directory protection (/bin, /sbin, /lib, /usr/*, /root, /var/run, /var/lock)
+
+### Fixed
+- TOCTOU vulnerability in file creation using atomic OpenOptions::create_new()
+- CLI index bug in --output flag parsing (off-by-2 error)
+- Unsafe env::set_var replaced with safe env_logger configuration
+- Inverted clippy logic in rebuild.sh script
+
+### Security
+- Path traversal attack prevention with canonicalization
+- JSON injection protection with proper character escaping
+- Credential warnings in generated configuration files
+- File overwrite protection with user confirmation in interactive mode
+
 ## [1.0.0] - 2025-11-10
 
 ### Added
