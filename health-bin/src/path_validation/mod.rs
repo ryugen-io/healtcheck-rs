@@ -1,3 +1,8 @@
+//! Secure path validation preventing path traversal and TOCTOU attacks.
+//!
+//! Blocks writes to system dirs (/etc, /bin, /sys, /proc, C:\Windows, etc.),
+//! resolves symlinks via canonicalization, and handles extensionless files.
+
 use std::env;
 use std::path::{Path, PathBuf};
 

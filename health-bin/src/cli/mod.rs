@@ -1,3 +1,14 @@
+//! Command-line interface argument parsing and help text
+//!
+//! This module handles all CLI interactions including:
+//! - Argument parsing for commands (generate-bin, generate-conf, serve, watch)
+//! - Flag parsing (--help, --version, --output)
+//! - Help text and version display
+//! - Command routing to appropriate handlers
+//!
+//! The CLI is designed to be simple and intuitive, with position-independent
+//! flag parsing and comprehensive error messages for common mistakes.
+
 use std::env;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");

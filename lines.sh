@@ -76,7 +76,8 @@ analyze_files() {
     while IFS= read -r file; do
         if [ -f "$file" ]; then
             local lines
-            lines=$(wc -l < "$file")
+            # Exclude module documentation lines (//!) from count
+            lines=$(grep -cv '^\s*//!' "$file" 2>/dev/null || wc -l < "$file")
             total_lines=$((total_lines + lines))
             total_files=$((total_files + 1))
 

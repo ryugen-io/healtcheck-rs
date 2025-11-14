@@ -1,3 +1,26 @@
+//! Health check execution engine
+//!
+//! This module orchestrates the execution of health checks:
+//! - Reads and parses configuration files
+//! - Registers all available check types (TCP, HTTP, database, process)
+//! - Executes checks in parallel for optimal performance
+//! - Collects results and outputs JSON status
+//!
+//! ## Logging
+//!
+//! Uses `env_logger` with INFO level by default. Set `RUST_LOG` environment
+//! variable to control verbosity:
+//!
+//! ```sh
+//! RUST_LOG=debug healthcheck config.conf
+//! RUST_LOG=error healthcheck config.conf
+//! ```
+//!
+//! ## Error Handling
+//!
+//! Individual check failures are captured and reported in the JSON output.
+//! The overall status is `false` if any check fails.
+
 use healthcheck_core::{
     config::parse_config_file,
     probes::{database::DatabaseCheck, http::HttpCheck, process::ProcessCheck, tcp::TcpCheck},

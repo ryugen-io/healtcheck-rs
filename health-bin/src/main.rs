@@ -1,3 +1,30 @@
+//! HealthCheck RS - Lightweight health check CLI and API server
+//!
+//! A minimal, secure health checking tool with multiple probe types and
+//! deployment-focused CLI commands.
+//!
+//! ## Features
+//!
+//! - **Multiple probe types**: TCP, HTTP, database (PostgreSQL), process
+//! - **Deployment tools**: `generate-bin` and `generate-conf` for easy setup
+//! - **Security-first**: Path validation, TOCTOU prevention, input sanitization
+//! - **Minimal dependencies**: Only `log` and `env_logger` for runtime
+//! - **Small binary**: ~530KB compressed with UPX
+//! - **Fast**: Parallel check execution with minimal overhead
+//!
+//! ## Usage
+//!
+//! ```sh
+//! # Run health checks from config
+//! healthcheck healthcheck.config
+//!
+//! # Generate deployment binary
+//! healthcheck generate-bin --output ./bin
+//!
+//! # Generate example config
+//! healthcheck generate-conf
+//! ```
+
 mod cli;
 mod commands;
 mod path_validation;

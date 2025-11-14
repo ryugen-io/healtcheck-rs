@@ -1,3 +1,7 @@
+//! CLI command implementations: `generate-bin` and `generate-conf`.
+//!
+//! Security: Path validation, TOCTOU prevention, TTY detection, credential warnings.
+
 use std::env;
 use std::fs;
 use std::io::{self, IsTerminal, Write};
