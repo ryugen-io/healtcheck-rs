@@ -74,7 +74,7 @@ fn parse_host_authority(authority: &str, path: String) -> Result<HttpTarget, Str
     }
 
     let host = host_str.to_string();
-    
+
     Ok(HttpTarget {
         host: host.clone(),
         display_host: host,

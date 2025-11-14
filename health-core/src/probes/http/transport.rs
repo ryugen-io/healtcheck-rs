@@ -81,16 +81,16 @@ fn resolve_addresses(target: &HttpTarget) -> Result<Vec<SocketAddr>, String> {
 
 fn build_request(target: &HttpTarget) -> String {
     // Pre-allocate capacity for the HTTP request
-    // Typical size: "GET " (4) + path + " HTTP/1.1\r\n" (11) + "Host: " (6) + host + 
+    // Typical size: "GET " (4) + path + " HTTP/1.1\r\n" (11) + "Host: " (6) + host +
     // "\r\nUser-Agent: metamcp-healthcheck\r\nConnection: close\r\n\r\n" (60)
     let capacity = 81 + target.path.len() + target.display_host.len();
     let mut request = String::with_capacity(capacity);
-    
+
     request.push_str("GET ");
     request.push_str(&target.path);
     request.push_str(" HTTP/1.1\r\nHost: ");
     request.push_str(&target.display_host);
     request.push_str("\r\nUser-Agent: metamcp-healthcheck\r\nConnection: close\r\n\r\n");
-    
+
     request
 }

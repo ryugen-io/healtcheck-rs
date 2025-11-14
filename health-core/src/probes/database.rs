@@ -56,22 +56,21 @@ impl DatabaseCheck {
             .unwrap_or(3000);
 
         // Pre-allocate capacity for connection string to avoid reallocations
-        let mut conn_str = String::with_capacity(
-            host.len() + user.len() + dbname.len() + password.len() + 50
-        );
-        
+        let mut conn_str =
+            String::with_capacity(host.len() + user.len() + dbname.len() + password.len() + 50);
+
         conn_str.push_str("host=");
         conn_str.push_str(&host);
         conn_str.push_str(" port=");
         conn_str.push_str(&port.to_string());
         conn_str.push_str(" user=");
         conn_str.push_str(&user);
-        
+
         if !password.is_empty() {
             conn_str.push_str(" password=");
             conn_str.push_str(&password);
         }
-        
+
         conn_str.push_str(" dbname=");
         conn_str.push_str(&dbname);
 

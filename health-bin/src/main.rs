@@ -142,7 +142,7 @@ fn print_error_json(message: &str) {
 fn escape_json_string(s: &str) -> String {
     // Pre-allocate with some extra capacity for escape sequences
     let mut result = String::with_capacity(s.len() + 16);
-    
+
     for ch in s.chars() {
         match ch {
             '\\' => result.push_str("\\\\"),
@@ -153,6 +153,6 @@ fn escape_json_string(s: &str) -> String {
             _ => result.push(ch),
         }
     }
-    
+
     result
 }
