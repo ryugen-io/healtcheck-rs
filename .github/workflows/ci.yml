@@ -25,19 +25,65 @@ env:
 jobs:
   # Fast checks that run in parallel
   format:
-    name: Format Check
+    name: Auto-Format
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.head_ref || github.ref }}
+          fetch-depth: 0
+
+      - name: Check if Rust files changed
+        id: check-rust-files
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            # For PRs, check files changed in the PR
+            if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q '\.rs$'; then
+              echo "rust_changed=true" >> $GITHUB_OUTPUT
+            else
+              echo "rust_changed=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            # For pushes, check files in the last commit
+            if git diff --name-only HEAD^ HEAD | grep -q '\.rs$'; then
+              echo "rust_changed=true" >> $GITHUB_OUTPUT
+            else
+              echo "rust_changed=false" >> $GITHUB_OUTPUT
+            fi
+          fi
 
       - name: Install Rust
+        if: steps.check-rust-files.outputs.rust_changed == 'true'
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
           components: rustfmt
 
-      - name: Check formatting
-        run: cargo fmt --all -- --check
+      - name: Run cargo fmt
+        if: steps.check-rust-files.outputs.rust_changed == 'true'
+        run: cargo fmt --all
+
+      - name: Check for formatting changes
+        if: steps.check-rust-files.outputs.rust_changed == 'true'
+        id: verify-changed-files
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push formatting changes
+        if: steps.check-rust-files.outputs.rust_changed == 'true' && steps.verify-changed-files.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -A
+          git commit -m "chore: auto-format code with cargo fmt [skip ci]"
+          git push
 
   clippy:
     name: Clippy Lint
