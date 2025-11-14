@@ -57,8 +57,14 @@ fn healthcheck_parses_valid_config() {
     // Config should be parsed successfully and return JSON output
     // The check itself might fail (port not open), but parsing should work
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("\"overall\":"), "Should output JSON with overall status");
-    assert!(stdout.contains("\"checks\":"), "Should output JSON with checks array");
+    assert!(
+        stdout.contains("\"overall\":"),
+        "Should output JSON with overall status"
+    );
+    assert!(
+        stdout.contains("\"checks\":"),
+        "Should output JSON with checks array"
+    );
 }
 
 #[test]
@@ -91,7 +97,10 @@ fn test_generate_bin_without_output_flag() {
     // Cleanup default ./bin directory
     fs::remove_dir_all("./bin").ok();
 
-    assert!(output.status.success(), "Command should succeed with default path");
+    assert!(
+        output.status.success(),
+        "Command should succeed with default path"
+    );
 }
 
 #[test]
