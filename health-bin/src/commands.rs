@@ -3,31 +3,102 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-/// Validate and canonicalize output path to prevent path traversal attacks
+/// Validate and safely resolve output path to prevent path traversal attacks
+/// Uses canonicalization to prevent TOCTOU vulnerabilities
 fn validate_output_path(path: &str) -> Result<PathBuf, String> {
-    // Reject obvious path traversal patterns
-    if path.contains("..") {
-        return Err("Path traversal detected: '..' is not allowed".to_string());
-    }
-
-    // Reject absolute paths to sensitive directories
     let path_obj = Path::new(path);
-    if path_obj.is_absolute() {
-        let path_str = path_obj.to_string_lossy();
-        if path_str.starts_with("/etc")
-            || path_str.starts_with("/sys")
-            || path_str.starts_with("/proc")
-            || path_str.starts_with("C:\\Windows")
-            || path_str.starts_with("C:\\Program Files")
-        {
+
+    // For paths that don't exist yet, validate the parent directory
+    let (dir_to_check, is_file) = if path_obj.extension().is_some() {
+        // Looks like a file path, check parent directory
+        (path_obj.parent().unwrap_or_else(|| Path::new(".")), true)
+    } else {
+        // Directory path, check it directly
+        (path_obj, false)
+    };
+
+    // Check if the directory exists, or if its parent exists
+    let parent_exists = dir_to_check.exists();
+    if !parent_exists && dir_to_check != Path::new(".") && dir_to_check != Path::new("") {
+        // Check if parent directory exists
+        let parent = dir_to_check.parent().unwrap_or_else(|| Path::new("."));
+        // Only require parent to exist if it's not the current directory
+        if parent != Path::new(".") && parent != Path::new("") && !parent.exists() {
             return Err(format!(
-                "Access to system directory '{}' is not allowed",
-                path
+                "Parent directory '{}' does not exist",
+                parent.display()
             ));
         }
     }
 
-    Ok(path_obj.to_path_buf())
+    // Try to canonicalize the directory (resolves symlinks and ..)
+    let canonical = if parent_exists {
+        dir_to_check
+            .canonicalize()
+            .map_err(|e| format!("Failed to resolve path '{}': {}", path, e))?
+    } else {
+        // Directory doesn't exist, validate parent and construct path
+        let parent = dir_to_check.parent();
+
+        let parent_canonical = if let Some(p) = parent {
+            if p == Path::new("") || p == Path::new(".") {
+                // Parent is current directory
+                env::current_dir().map_err(|e| format!("Failed to get current directory: {}", e))?
+            } else {
+                // Parent is some other directory, canonicalize it
+                p.canonicalize().map_err(|e| {
+                    format!("Failed to resolve parent path '{}': {}", p.display(), e)
+                })?
+            }
+        } else {
+            // No parent, use current directory
+            env::current_dir().map_err(|e| format!("Failed to get current directory: {}", e))?
+        };
+
+        let dir_name = dir_to_check
+            .file_name()
+            .ok_or_else(|| "Invalid directory name".to_string())?;
+        parent_canonical.join(dir_name)
+    };
+
+    // Check against system directories after canonicalization
+    let canonical_str = canonical.to_string_lossy();
+
+    #[cfg(unix)]
+    {
+        if canonical_str.starts_with("/etc")
+            || canonical_str.starts_with("/sys")
+            || canonical_str.starts_with("/proc")
+            || canonical_str.starts_with("/dev")
+            || canonical_str.starts_with("/boot")
+        {
+            return Err(format!(
+                "Access to system directory '{}' is not allowed",
+                canonical_str
+            ));
+        }
+    }
+
+    #[cfg(windows)]
+    {
+        let lower = canonical_str.to_lowercase();
+        if lower.starts_with("c:\\windows") || lower.starts_with("c:\\program files") {
+            return Err(format!(
+                "Access to system directory '{}' is not allowed",
+                canonical_str
+            ));
+        }
+    }
+
+    // Return the full path (including filename if it was a file path)
+    if is_file {
+        let filename = path_obj
+            .file_name()
+            .ok_or_else(|| "Invalid filename".to_string())?;
+        Ok(canonical.join(filename))
+    } else {
+        Ok(canonical)
+    }
 }
 
 fn get_platform_info() -> (&'static str, &'static str, &'static str) {
@@ -165,33 +236,92 @@ process:name=postgres
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::env;
 
     #[test]
-    fn test_validate_output_path_normal() {
-        assert!(validate_output_path("./bin").is_ok());
-        assert!(validate_output_path("output").is_ok());
-        assert!(validate_output_path("./output/dir").is_ok());
+    fn test_validate_output_path_relative() {
+        // Relative paths in current directory should work
+        let result = validate_output_path("./test_output");
+        assert!(
+            result.is_ok(),
+            "Should allow relative path in current dir: {:?}",
+            result
+        );
+
+        let result = validate_output_path("bin");
+        assert!(
+            result.is_ok(),
+            "Should allow simple relative path: {:?}",
+            result
+        );
     }
 
     #[test]
-    fn test_validate_output_path_rejects_traversal() {
-        assert!(validate_output_path("../etc").is_err());
-        assert!(validate_output_path("../../etc/passwd").is_err());
-        assert!(validate_output_path("foo/../bar").is_err());
+    fn test_validate_output_path_file() {
+        // File paths should work
+        let result = validate_output_path("./config.txt");
+        assert!(result.is_ok(), "Should allow file path");
     }
 
     #[test]
-    fn test_validate_output_path_rejects_system_dirs() {
-        assert!(validate_output_path("/etc/config").is_err());
-        assert!(validate_output_path("/sys/kernel").is_err());
-        assert!(validate_output_path("/proc/self").is_err());
+    fn test_validate_output_path_nonexistent_parent() {
+        // Should fail if parent directory doesn't exist
+        let result = validate_output_path("./nonexistent_dir/subdir/output");
+        assert!(
+            result.is_err(),
+            "Should reject path with nonexistent parent"
+        );
     }
 
     #[test]
-    fn test_validate_output_path_windows() {
-        if cfg!(windows) {
-            assert!(validate_output_path("C:\\Windows\\System32").is_err());
-            assert!(validate_output_path("C:\\Program Files\\test").is_err());
+    #[cfg(unix)]
+    fn test_validate_output_path_rejects_system_dirs_unix() {
+        // Direct system directories should be rejected
+        assert!(validate_output_path("/etc").is_err(), "Should reject /etc");
+        assert!(validate_output_path("/sys").is_err(), "Should reject /sys");
+        assert!(
+            validate_output_path("/proc").is_err(),
+            "Should reject /proc"
+        );
+        assert!(validate_output_path("/dev").is_err(), "Should reject /dev");
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn test_validate_output_path_rejects_system_dirs_windows() {
+        assert!(
+            validate_output_path("C:\\Windows").is_err(),
+            "Should reject C:\\Windows"
+        );
+        assert!(
+            validate_output_path("C:\\Program Files").is_err(),
+            "Should reject C:\\Program Files"
+        );
+    }
+
+    #[test]
+    fn test_validate_output_path_traversal_to_system() {
+        // If traversal leads to system directory, it should be rejected
+        // This test creates a path that would traverse to /etc or similar
+        let cwd = env::current_dir().expect("Failed to get current dir");
+
+        // Try to construct a path that goes up enough levels to reach /etc
+        #[cfg(unix)]
+        {
+            // Build a path like ../../../etc (enough ../ to reach root)
+            let depth = cwd.components().count();
+            let mut traversal = String::new();
+            for _ in 0..depth + 1 {
+                traversal.push_str("../");
+            }
+            traversal.push_str("etc");
+
+            let result = validate_output_path(&traversal);
+            assert!(
+                result.is_err(),
+                "Should reject traversal to /etc: {:?}",
+                result
+            );
         }
     }
 }

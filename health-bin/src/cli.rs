@@ -55,6 +55,43 @@ pub enum CliAction {
     RunChecks { config_path: String },
 }
 
+/// Parse --output flag from arguments, handling edge cases
+fn parse_output_flag(args: &[String], command: &str) -> Option<String> {
+    // Find the --output flag position
+    let mut output_idx = None;
+    for (i, arg) in args.iter().enumerate().skip(2) {
+        if arg == "--output" {
+            if output_idx.is_some() {
+                eprintln!("Warning: Multiple --output flags provided, using the first one");
+                break;
+            }
+            output_idx = Some(i);
+        }
+    }
+
+    if let Some(idx) = output_idx {
+        // Check if the value is provided
+        match args.get(idx + 1) {
+            Some(path) if !path.starts_with("--") => Some(path.clone()),
+            Some(flag) => {
+                eprintln!(
+                    "Error: --output flag value cannot be another flag: {}",
+                    flag
+                );
+                eprintln!("Usage: healthcheck {} --output <path>", command);
+                std::process::exit(2);
+            }
+            None => {
+                eprintln!("Error: --output requires a path argument");
+                eprintln!("Usage: healthcheck {} --output <path>", command);
+                std::process::exit(2);
+            }
+        }
+    } else {
+        None
+    }
+}
+
 pub fn parse_args() -> CliAction {
     let args: Vec<String> = env::args().collect();
 
@@ -63,38 +100,32 @@ pub fn parse_args() -> CliAction {
             "-h" | "--help" => return CliAction::Help,
             "-v" | "--version" => return CliAction::Version,
             "generate-bin" => {
-                let output_dir = if args.len() > 2 && args[2] == "--output" {
-                    match args.get(3) {
-                        Some(path) => Some(path.clone()),
-                        None => {
-                            eprintln!("Error: --output requires a path argument");
-                            eprintln!("Usage: healthcheck generate-bin --output <path>");
-                            std::process::exit(2);
-                        }
-                    }
-                } else {
-                    None
-                };
+                let output_dir = parse_output_flag(&args, "generate-bin");
                 return CliAction::GenerateBin { output_dir };
             }
             "generate-conf" => {
-                let output_path = if args.len() > 2 && args[2] == "--output" {
-                    match args.get(3) {
-                        Some(path) => Some(path.clone()),
-                        None => {
-                            eprintln!("Error: --output requires a path argument");
-                            eprintln!("Usage: healthcheck generate-conf --output <path>");
-                            std::process::exit(2);
-                        }
-                    }
-                } else {
-                    None
-                };
+                let output_path = parse_output_flag(&args, "generate-conf");
                 return CliAction::GenerateConf { output_path };
             }
-            "serve" => return CliAction::Serve,
-            "watch" => return CliAction::Watch,
+            "serve" => {
+                if args.len() > 2 {
+                    eprintln!("Warning: 'serve' command does not accept additional arguments yet");
+                }
+                return CliAction::Serve;
+            }
+            "watch" => {
+                if args.len() > 2 {
+                    eprintln!("Warning: 'watch' command does not accept additional arguments yet");
+                }
+                return CliAction::Watch;
+            }
             path => {
+                // Validate that this looks like a config file path, not a typo
+                if path.starts_with("--") {
+                    eprintln!("Error: Unknown flag: {}", path);
+                    eprintln!("Run 'healthcheck --help' for usage information");
+                    std::process::exit(2);
+                }
                 return CliAction::RunChecks {
                     config_path: path.to_string(),
                 };
@@ -104,5 +135,43 @@ pub fn parse_args() -> CliAction {
 
     CliAction::RunChecks {
         config_path: "healthcheck.config".to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_output_flag_normal() {
+        let args = vec![
+            "healthcheck".to_string(),
+            "generate-bin".to_string(),
+            "--output".to_string(),
+            "./bin".to_string(),
+        ];
+        let result = parse_output_flag(&args, "generate-bin");
+        assert_eq!(result, Some("./bin".to_string()));
+    }
+
+    #[test]
+    fn test_parse_output_flag_none() {
+        let args = vec!["healthcheck".to_string(), "generate-bin".to_string()];
+        let result = parse_output_flag(&args, "generate-bin");
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_parse_output_flag_position_independent() {
+        // --output can appear anywhere after the command
+        let args = vec![
+            "healthcheck".to_string(),
+            "generate-bin".to_string(),
+            "some-other-arg".to_string(),
+            "--output".to_string(),
+            "./bin".to_string(),
+        ];
+        let result = parse_output_flag(&args, "generate-bin");
+        assert_eq!(result, Some("./bin".to_string()));
     }
 }
