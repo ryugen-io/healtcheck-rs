@@ -1,5 +1,6 @@
 use std::env;
 use std::fs;
+use std::io::Write;
 use std::path::Path;
 
 fn get_platform_info() -> (&'static str, &'static str, &'static str) {
@@ -73,6 +74,52 @@ pub fn generate_bin(output_dir: Option<String>) -> Result<(), String> {
     println!("Docker example:");
     println!("  COPY {} /usr/local/bin/healthcheck", binary_name);
     println!("  RUN chmod +x /usr/local/bin/healthcheck");
+
+    Ok(())
+}
+
+pub fn generate_conf(output_path: Option<String>) -> Result<(), String> {
+    let config_path = output_path.as_deref().unwrap_or("healthcheck.config");
+
+    let example_config = r#"# HealthCheck RS Configuration
+# Format: check_type:param1=value1,param2=value2
+
+# TCP Port Checks
+# Check if a TCP port is open and accepting connections
+tcp:host=localhost,port=8080,timeout_ms=1000
+tcp:host=localhost,port=5432,timeout_ms=1000
+
+# HTTP Endpoint Checks
+# Check if HTTP endpoints return 2xx or 3xx status codes
+http:url=http://localhost:8080/health,timeout_ms=5000
+http:url=http://localhost:3000/api/health,timeout_ms=3000
+
+# Database Checks (PostgreSQL)
+# Check database connectivity and execute test query
+database:conn_str=postgresql://user:password@localhost:5432/dbname,timeout_ms=3000
+# Or use individual parameters:
+# database:host=localhost,port=5432,user=postgres,password=secret,dbname=mydb,timeout_ms=3000
+
+# Process Checks (Linux only)
+# Check if a process is running by name
+process:name=nginx
+process:name=postgres
+
+# Multiple checks can be combined
+# All checks run in parallel for fast results
+"#;
+
+    let mut file = fs::File::create(config_path)
+        .map_err(|e| format!("Failed to create config file '{}': {}", config_path, e))?;
+
+    file.write_all(example_config.as_bytes())
+        .map_err(|e| format!("Failed to write config file: {}", e))?;
+
+    println!("Generated example configuration:");
+    println!("  File: {}", config_path);
+    println!();
+    println!("Edit the file and run:");
+    println!("  healthcheck {}", config_path);
 
     Ok(())
 }

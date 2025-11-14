@@ -22,6 +22,7 @@ pub fn print_help() {
     println!();
     println!("COMMANDS:");
     println!("    generate-bin     Generate standalone binary for deployment");
+    println!("    generate-conf    Generate example configuration file");
     println!("    serve            Start HTTP API server (coming soon)");
     println!("    watch            Watch mode with continuous monitoring (coming soon)");
     println!();
@@ -32,6 +33,10 @@ pub fn print_help() {
     println!("    # Generate binary for container deployment");
     println!("    healthcheck generate-bin");
     println!("    healthcheck generate-bin --output ./bin");
+    println!();
+    println!("    # Generate example configuration");
+    println!("    healthcheck generate-conf");
+    println!("    healthcheck generate-conf --output custom.conf");
     println!();
     println!("CONFIG FORMAT:");
     println!("    tcp:host=localhost,port=8080,timeout_ms=1000");
@@ -44,6 +49,7 @@ pub enum CliAction {
     Help,
     Version,
     GenerateBin { output_dir: Option<String> },
+    GenerateConf { output_path: Option<String> },
     Serve,
     Watch,
     RunChecks { config_path: String },
@@ -63,6 +69,14 @@ pub fn parse_args() -> CliAction {
                     None
                 };
                 return CliAction::GenerateBin { output_dir };
+            }
+            "generate-conf" => {
+                let output_path = if args.len() > 2 && args[2] == "--output" {
+                    args.get(3).cloned()
+                } else {
+                    None
+                };
+                return CliAction::GenerateConf { output_path };
             }
             "serve" => return CliAction::Serve,
             "watch" => return CliAction::Watch,

@@ -16,6 +16,13 @@ fn main() {
                 std::process::exit(1);
             }
         },
+        CliAction::GenerateConf { output_path } => match commands::generate_conf(output_path) {
+            Ok(()) => {}
+            Err(e) => {
+                eprintln!("Error: {}", e);
+                std::process::exit(1);
+            }
+        },
         CliAction::Serve => {
             eprintln!("Error: 'serve' command not yet implemented");
             eprintln!("Coming soon: HTTP API server mode");
